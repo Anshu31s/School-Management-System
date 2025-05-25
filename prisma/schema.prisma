@@ -7,6 +7,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserSex {
+  MALE
+  FEMALE
+}
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+  PARENT
+  ALL
+}
+
+enum ExamType {
+  UNIT_TEST
+  HALF_YEARLY
+  FINAL
+}
+
 model Admin {
   id       String @id
   username String @unique
@@ -16,7 +35,8 @@ model Student {
   id          String       @id
   username    String       @unique
   name        String
-  surname     String
+  lastname    String
+  dob         DateTime
   email       String?      @unique
   address     String
   img         String?
@@ -27,41 +47,43 @@ model Student {
   classId     Int
   class       Class        @relation(fields: [classId], references: [id])
   attendances Attendance[]
-  birthday    DateTime
+  grades      Grade[]
   status      Boolean      @default(true)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+
+  @@index([classId])
+  @@index([parentId])
 }
 
 model Teacher {
   id        String    @id
   username  String    @unique
   name      String
-  surname   String
+  lastname  String
   email     String?   @unique
   phone     String?   @unique
   address   String
   img       String?
   bloodType String
   sex       UserSex
-  createdAt DateTime  @default(now())
+  dob       DateTime
+  status    Boolean   @default(true)
   subjects  Subject[]
   classes   Class[]
-  birthday  DateTime
-  status    Boolean   @default(true)
+  createdAt DateTime  @default(now())
 }
 
 model Parent {
   id        String    @id
   username  String    @unique
   name      String
-  surname   String
+  lastname  String
   email     String?   @unique
   phone     String    @unique
   address   String
-  createdAt DateTime  @default(now())
   students  Student[]
-  status    Boolean   @default(true)
+  createdAt DateTime  @default(now())
 }
 
 model Class {
@@ -73,6 +95,8 @@ model Class {
   students      Student[]
   assignments   Assignment[]
   announcements Announcement[]
+
+  @@index([supervisorId])
 }
 
 model Subject {
@@ -80,6 +104,7 @@ model Subject {
   name        String       @unique
   teachers    Teacher[]
   assignments Assignment[]
+  grades      Grade[]
 }
 
 model Assignment {
@@ -99,6 +124,9 @@ model Attendance {
   present   Boolean
   studentId String
   student   Student  @relation(fields: [studentId], references: [id])
+
+  @@index([studentId])
+  @@index([date])
 }
 
 model Event {
@@ -114,20 +142,32 @@ model Announcement {
   title       String
   description String
   date        DateTime
-  classId     Int? // if assigned to a class
+  classId     Int?
   class       Class?   @relation(fields: [classId], references: [id])
-  targetRole  String? // "teacher", "student", "parent"
+  targetRole  Role?
 }
 
-enum UserSex {
-  MALE
-  FEMALE
+model Grade {
+  id        Int      @id @default(autoincrement())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id])
+  subjectId Int
+  subject   Subject  @relation(fields: [subjectId], references: [id])
+  examType  ExamType
+  score     Float
+  maxScore  Float
+  examDate  DateTime
+  createdAt DateTime @default(now())
+
+  @@index([studentId])
+  @@index([subjectId])
+  @@index([examType])
 }
 
-enum Day {
-  MONDAY
-  TUESDAY
-  WEDNESDAY
-  THURSDAY
-  FRIDAY
+model AcademicYear {
+  id        Int      @id @default(autoincrement())
+  yearLabel String   @unique
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
 }

@@ -1,4 +1,4 @@
-#  Dev School Management Dashboard
+# School Management System
 
 ## Getting Started
 
